@@ -1,11 +1,6 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-//TODO: Terms don't have URL, it should be baked into the application!
-
-// TODO: So there should be the current terms and previously accepted terms
-//TODO: the API should not break tho
-
 contract SimpleTerms {
     event NewTerms(bytes32 termshash);
     event NewParticipant(address indexed participant);
