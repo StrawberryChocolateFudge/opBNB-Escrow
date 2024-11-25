@@ -106,17 +106,17 @@ contract Escrow is SimpleTerms, ReentrancyGuard {
         return details[at];
     }
 
-    function depositPay(uint256 to) external payable checkAcceptance {
-        require(details[to].initialized, "The Escrow doesn't exist");
+    function depositPay(uint256 detail) external payable checkAcceptance {
+        require(details[detail].initialized, "The Escrow doesn't exist");
         require(
-            details[to].state == State.awaiting_payment,
+            details[detail].state == State.awaiting_payment,
             "Invalid Escrow State"
         );
-        details[to].pay = msg.value;
+        details[detail].pay = msg.value;
         totalProcessed += msg.value;
         currentBalance += msg.value;
-        details[to].state = State.awaiting_delivery;
-        emit PaymentDeposited(to, msg.value);
+        details[detail].state = State.awaiting_delivery;
+        emit PaymentDeposited(detail, msg.value);
     }
 
     function confirmDelivery(uint256 detail) external checkAcceptance {
@@ -134,18 +134,18 @@ contract Escrow is SimpleTerms, ReentrancyGuard {
         emit DeliveryConfirmed(detail);
     }
 
-    function confirmRefund(uint256 to) external checkAcceptance {
-        require(details[to].initialized, "The escrow doesn't exist");
+    function confirmRefund(uint256 detail) external checkAcceptance {
+        require(details[detail].initialized, "The escrow doesn't exist");
         require(
-            details[to].state == State.awaiting_delivery,
+            details[detail].state == State.awaiting_delivery,
             "Invalid Escrow State"
         );
         require(
-            details[to].seller == msg.sender || msg.sender == agent,
+            details[detail].seller == msg.sender || msg.sender == agent,
             "Invalid address"
         );
-        details[to].state = State.refunded;
-        emit RefundConfirmed(to);
+        details[detail].state = State.refunded;
+        emit RefundConfirmed(detail);
     }
 
     function withdrawPay(uint256 detail) external nonReentrant checkAcceptance {

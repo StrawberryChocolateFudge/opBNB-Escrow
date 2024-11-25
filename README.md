@@ -1,4 +1,4 @@
-# Full Stack Escrow
+# BNB Escrow
 
 This full stack escrow application helps facilitate payments between buyers and sellers using an agent for dispute resolution.
 It was created with Hardhat and Parcel.
@@ -44,14 +44,16 @@ These are the important smart contract functions that mutate the state.
 An address can create an escrow if they have accepted the terms.
 The escrows are stored indexed. The state of the created escrow is awaiting_payment
 
-`depositPay(uint2546 to)`
+A created escrow is accessed by index as a "detail"
+
+`depositPay(uint2546 detail)`
 The pay can be deposited by anyone for a specific escrow. The state of the escrow will become awaiting_delivery
 
 
 `confirmDelivery(uint256 detail)`
 The buyer or the agent can confirm the delivery of a service. The agent should only do so on dispute resolution. The state of the escrow will be  delivered
 
-`confirmRefund(uint256 to)`
+`confirmRefund(uint256 detail)`
 The seller or the agent can confirm refunding the escrow payment.The state of the escrow will be refunded.
 
 `withdrawPay(uint256 detail)`
