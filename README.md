@@ -24,6 +24,27 @@ There is a 2% Agent fee and a 1% Dao Fee on the escrow transaction.
 ## Terms and Conditions
 The terms and conditions as created by the agent must be accepted to use the escrow contract functions. Both the buyer and the seller must comply with the legal terms.
 
+## Deployment
+
+You need to install the dependencies via `npm install`
+Then create a `.env` file and add a private key for deployment. The .env file should look like the .env.example file!
+
+Run `npx hardhat run scripts/deploy.ts --network opbnbtestnet`
+
+Edit the terms and conditions inside the `./frontend/lib/terms.ts` file to fit your exact use-case
+
+Then set the terms by running the terms script.
+
+`npx hardhat run scripts/setTerms.ts --network opbnbtestnet`
+
+Now go to index.html and replace  data-title with a custom title and data-contract with the deployed contract's address
+
+Finally npm run build and you got the parcel build. Upload that file to a hosting like cloudflare pages and your escrow will be online and you are ready to work as an Escrow Agent!
+
+## NOTE
+The current source code contains a demo and has hardcoded contract addresses pointing to BSC testnet
+Deploy your own version and replace these values
+
 ## Escrow States
 
 The state of the escrow is determiend by the State enum.
@@ -62,6 +83,6 @@ The payment can be only withdrawn by the seller.
 `refund(uint256 detail)`
 The payment can be pulled for a refund by the buyer
 
-
+## PAYMENT LIMIT
 The front end allows maximum 800USD to be escrowed at once with 2% fee. 1% goes to the feeDAO and 1% goes to the escrow agent
 
