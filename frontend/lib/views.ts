@@ -11,7 +11,7 @@ import {
   newEscrowActions,
 } from "./actions";
 import { getCurrentChainCurrency } from "./web3";
-import {terms} from "./terms";
+import { terms } from "./terms";
 
 export function getById(id: string) {
   return document.getElementById(id);
@@ -309,13 +309,13 @@ export const NewEscrow = (arbiterCalls, deprecated) =>
     class="maxwidth-500px center "
     type="text"
     id="buyer-address-input"
-    placeholder="Buyer ETH address"
+    placeholder="Buyer address"
   />
   <input
     class="maxwidth-500px center"
     type="text"
     id="seller-address-input"
-    placeholder="Seller ETH address"
+    placeholder="Seller address"
   />
 
   <div id="message-slot" class="text-align-center"></div>
@@ -386,8 +386,10 @@ export const ConnectWallet = (title: string) =>
   </article>`;
 
 export const TermsPage = (terms: string) =>
-  html`<article class="maxwidth-500px center">
-<h1 class="text-align-center">Terms and conditions</h1>
-<pre>${terms}</pre>
-<button id="accept-terms">Accept</button>
-</article>`;
+  html`<div><article class="maxwidth-800px center">
+<h1 class="text-align-center"><button id="terms-back" class="center width-200">Back</button>Terms and conditions</h1>
+<pre class="terms-pre">${terms}</pre>
+<h2><button disabled class="center width-200" id="accept-terms">Accept</button>
+</h2>
+</article>
+</div>`;
