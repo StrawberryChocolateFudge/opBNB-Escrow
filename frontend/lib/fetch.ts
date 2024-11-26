@@ -1,9 +1,9 @@
 /* eslint-disable no-undef */
-export async function fetchONEUSDPrice() {
+export async function fetchBNBUSDPrice() {
   let res;
   try {
     res = await fetch(
-      "https://api.binance.com/api/v1/ticker/24hr?symbol=ONEUSDT",
+      "https://api.binance.com/api/v1/ticker/24hr?symbol=BNBUSDT",
       { method: "GET" }
     );
   } catch (err) {
