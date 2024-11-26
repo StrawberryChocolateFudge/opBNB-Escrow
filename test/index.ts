@@ -1,29 +1,73 @@
 import { expect } from "chai";
 import { formatEther, parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import {hashEscrowAgreement} from "../frontend/lib/terms";
-
+import { hashEscrowAgreement } from "../frontend/lib/terms";
 
 describe("Escrow", function () {
+  it("Should register an agent and deploy an escrow", async function () {
+    const [signer1, arbiter, seller, buyer] = await ethers.getSigners();
+
+    const SimpleTerms = await ethers.getContractFactory("SimpleTerms");
+    const simpleTerms = await SimpleTerms.deploy();
+    const escrowAggreementHash = await hashEscrowAgreement();
+
+    await simpleTerms.setTerms(escrowAggreementHash);
+    await simpleTerms.accept(escrowAggreementHash);
+    const AgentRegistry = await ethers.getContractFactory("AgentRegistry");
+    const registry = await AgentRegistry.deploy(simpleTerms.address);
+    let index = await registry.index();
+
+    expect(index).to.equal(0);
+
+    //Register an agent
+    await registry.connect(arbiter).registerAgent(
+      "My agent name",
+    );
+
+    const agentName = await registry.agentName(arbiter.address);
+    expect(agentName).to.equal("My agent name");
+
+    index = await registry.index();
+
+    expect(index).to.equal(1);
+
+    const escrowAddress = await registry.agentEscrowContracts(arbiter.address);
+    //Call the escrow to check
+    const Escrow = await ethers.getContractFactory("Escrow");
+    const escrow = await Escrow.attach(escrowAddress);
+
+    expect(await escrow.getLastDetailIndex()).to.equal(0);
+    await escrow.createEscrow(buyer.address, seller.address);
+    expect(await escrow.getLastDetailIndex()).to.equal(1);
+  });
+
   it("Should create a new escrow and deliver it and another one gets refunded", async function () {
     // eslint-disable-next-line no-unused-vars
     const [signer1, arbiter, seller, buyer] = await ethers.getSigners();
+
+    const SimpleTerms = await ethers.getContractFactory("SimpleTerms");
+    const simpleTerms = await SimpleTerms.deploy();
+
     const Escrow = await ethers.getContractFactory("Escrow");
-    const escrow = await Escrow.connect(arbiter).deploy();
+    const escrow = await Escrow.connect(arbiter).deploy(
+      arbiter.address,
+      simpleTerms.address,
+    );
     await escrow.deployed();
     const escrowAggreementHash = await hashEscrowAgreement();
-    
-    await escrow.setTerms(escrowAggreementHash);
-    await escrow.connect(arbiter).accept(escrowAggreementHash);
-    await escrow.connect(seller).accept(escrowAggreementHash);
-    await escrow.connect(buyer).accept(escrowAggreementHash);
-    await escrow.accept(escrowAggreementHash);
+
+    await simpleTerms.setTerms(escrowAggreementHash);
+    await simpleTerms.connect(arbiter).accept(escrowAggreementHash);
+    await simpleTerms.connect(seller).accept(escrowAggreementHash);
+    await simpleTerms.connect(buyer).accept(escrowAggreementHash);
+    await simpleTerms.accept(escrowAggreementHash);
+
     await escrow.createEscrow(buyer.address, seller.address);
 
     expect(await escrow.getLastDetailIndex()).to.equal(1);
     let detail = await escrow.getDetailByIndex(1);
     expect(await (await escrow.getMyDetails(seller.address)).length).to.equal(
-      1
+      1,
     );
     expect(await (await escrow.getMyDetails(buyer.address)).length).to.equal(1);
 
@@ -47,7 +91,7 @@ describe("Escrow", function () {
     const sellerBalance2 = await seller.getBalance();
     expect(
       parseFloat(formatEther(sellerBalance1)) <
-        parseFloat(formatEther(sellerBalance2))
+        parseFloat(formatEther(sellerBalance2)),
     );
     detail = await escrow.getDetailByIndex(1);
     expect(detail.withdrawn).to.equal(true);
@@ -65,7 +109,7 @@ describe("Escrow", function () {
     await escrow.connect(buyer).refund(2);
     const balance2 = await buyer.getBalance();
     expect(
-      parseFloat(formatEther(balance1)) < parseFloat(formatEther(balance2))
+      parseFloat(formatEther(balance1)) < parseFloat(formatEther(balance2)),
     );
     let deprecationFailed = false;
     try {

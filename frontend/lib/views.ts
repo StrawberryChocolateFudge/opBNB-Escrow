@@ -243,7 +243,7 @@ export const EscrowPage = (escrow, address, arbiter, escrowNr, fee) =>
     )
   }${
     DisplayInTable(
-      "Pay",
+      "Payment",
       Web3.utils.fromWei(escrow.pay) + " " + getCurrentChainCurrency(),
     )
   }${DisplayInTable("State", getStateText(escrow.state))}${

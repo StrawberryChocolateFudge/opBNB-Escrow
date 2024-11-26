@@ -39,8 +39,6 @@ export async function connectWalletAction() {
     await switchToBSCTestnet().then(async () => {
       await requestAccounts();
 
-      //Check if the account signed the address
-
       getPage(PageState.FindOrCreate, {});
     });
   };

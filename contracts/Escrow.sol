@@ -1,6 +1,5 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-import "./SimpleTerms.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
@@ -20,9 +19,16 @@ enum State {
     refunded
 }
 
-contract Escrow is SimpleTerms, ReentrancyGuard {
+
+interface ISimpleTerms{
+    function acceptedTerms(address _address) external view returns (bool);
+}
+
+contract Escrow is ReentrancyGuard {
     using SafeMath for uint256;
     using Address for address payable;
+
+    ISimpleTerms simpleTerms;
 
     address payable private feeDAO;
     address payable private agent;
@@ -56,10 +62,16 @@ contract Escrow is SimpleTerms, ReentrancyGuard {
         uint256 daoFee
     );
 
-    constructor() {
-        agent = payable(msg.sender);
-
+    constructor(address _agent, address _simpleTerms) {
+        agent = payable(_agent);
+        simpleTerms = ISimpleTerms(_simpleTerms);
         feeDAO = payable(0x050e8C2DC9454cA53dA9eFDAD6A93bB00C216Ca0);
+    }
+
+    modifier checkAcceptance(){
+        bool accepted = simpleTerms.acceptedTerms(msg.sender);
+        require(accepted,"You must accept the terms first");
+        _;
     }
 
     function createEscrow(address buyer, address seller)

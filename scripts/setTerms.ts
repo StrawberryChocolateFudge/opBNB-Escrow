@@ -2,18 +2,18 @@ import { hashEscrowAgreement } from "../frontend/lib/terms";
 import { ethers } from "hardhat";
 
 //OPBNB TESTNET ADDRESS FOR MY ESCROW
-const escrowAddress = "0x30A31f1A6bD5e2b95FaAD4C6b8899886754d9B75";
+const simpleTermsAddress = "0x30A31f1A6bD5e2b95FaAD4C6b8899886754d9B75";
 
 async function main() {
   //Connect to the escrow contract and set the terms
 
-  const Escrow = await ethers.getContractFactory("Escrow");
+  const SimpleTerms = await ethers.getContractFactory("SimpleTerms");
 
-  const escrow = await Escrow.attach(escrowAddress);
+  const terms = await SimpleTerms.attach(simpleTermsAddress);
 
   const termsHash = await hashEscrowAgreement();
 
-  await escrow.setTerms(termsHash);
+  await terms.setTerms(termsHash);
 
   console.log("Terms set to ", termsHash);
 }
