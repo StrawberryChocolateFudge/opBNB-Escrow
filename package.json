@@ -40,7 +40,6 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.5.0",
-    "@ricardianfabric/simpleterms": "^0.0.5",
     "inline-source-cli": "^2.0.0",
     "lit-html": "^2.2.1",
     "web3": "^1.7.1"
