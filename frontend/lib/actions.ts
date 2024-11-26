@@ -2,7 +2,8 @@
 /* eslint-disable no-case-declarations */
 /* eslint-disable no-undef */
 /* eslint-disable node/no-missing-import */
-import { fetchONEUSDPrice } from "./fetch";
+import { fetchBNBUSDPrice } from "./fetch";
+import { hashEscrowAgreement } from "./terms";
 import {
   createSuccess,
   getById,
@@ -12,6 +13,7 @@ import {
   renderError,
 } from "./views";
 import {
+  acceptTerms,
   confirmDelivery,
   confirmRefund,
   createEscrow,
@@ -36,6 +38,8 @@ export async function connectWalletAction() {
   bttn.onclick = async () => {
     await switchToBSCTestnet().then(async () => {
       await requestAccounts();
+
+      //Check if the account signed the address
 
       getPage(PageState.FindOrCreate, {});
     });
@@ -124,7 +128,7 @@ export async function escrowActions(detail, address, arbiter, nr) {
           renderError("");
           if (parseFloat(amountEl.value) > 0) {
             if (accepted) {
-              const price = await fetchONEUSDPrice();
+              const price = await fetchBNBUSDPrice();
               const usdValue = parseFloat(amountEl.value) * price;
 
               if (usdValue > max800) {
@@ -308,13 +312,15 @@ export async function findOrCreateActions() {
   const history = getById("historyPage") as HTMLElement;
   const newEscrow = getById("new-escrow") as HTMLElement;
   const termsEl = getById("terms-button") as HTMLAnchorElement;
-  const address = await getAddress();
 
-  //TODO: Check if the signer accepted the current terms hash!
 
-  //IF not then show the terms
-  
-  
+
+
+  termsEl.onclick = function () {
+    renderError("");
+    getPage(PageState.termsPage, {});
+  };
+
   findDetail.onclick = async function () {
     renderError("");
 
@@ -372,8 +378,31 @@ async function newEscrowPage() {
   });
 }
 
-export async function acceptTermsAction(){
-  //TODO: get the terms hash and submit a transaction accepting it!
-  //TODO: Then navigate to the next page on success
-  //TODO: Or show error if unable to sign it!
+export async function acceptTermsAction() {
+  const backButton = getById("terms-back") as HTMLButtonElement;
+  const acceptButton = getById("accept-terms") as HTMLButtonElement;
+  const address = await getAddress();
+  const accepted = await getAcceptedTerms(address);
+
+  backButton.onclick = async function () {
+    getPage(PageState.FindOrCreate, {});
+  };
+
+  if (!accepted) {
+    acceptButton.disabled = false;
+  }
+
+  acceptButton.onclick = async function () {
+    const onError = (err, receipt) => {
+      renderError("An error Occured");
+      console.log(err);
+    };
+    const onReceipt = (receipt) => {
+      getPage(PageState.FindOrCreate, {});
+    };
+
+
+    const termsHash = hashEscrowAgreement();
+    await acceptTerms(termsHash, address, onError, onReceipt);
+  };
 }
