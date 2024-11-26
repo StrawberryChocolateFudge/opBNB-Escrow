@@ -51,3 +51,7 @@
 .hover-light:hover {
   background-color: #ccc;
 }
+
+.terms-pre{
+  white-space:pre-wrap;
+}
