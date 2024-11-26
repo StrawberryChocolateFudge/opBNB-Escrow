@@ -3,7 +3,7 @@ import Web3 from "web3";
 import escrow from "../../artifacts/contracts/Escrow.sol/Escrow.json";
 import { renderError } from "./views";
 
-export const BSCTESTNETID = "0x61";
+export const OPBNBTESTNETID = "0x15EB"; //5611
 
 declare global {
   // eslint-disable-next-line no-unused-vars
@@ -25,7 +25,7 @@ const contractAddress = () => {
   }
 };
 
-export const getCurrentChainCurrency = () => "ONE";
+export const getCurrentChainCurrency = () => "BNB";
 const web3 = getWeb3();
 const contract = getContract();
 
@@ -107,6 +107,15 @@ export async function createEscrow(buyer, seller, from, onError, onReceipt) {
     .on("receipt", onReceipt);
 }
 
+export async function acceptTerms(termsHash, from, onError, onReceipt) {
+  
+  await contract.methods
+    .accept(termsHash)
+    .send({ from})
+    .on("error", onError)
+    .on("receipt", onReceipt);
+}
+
 export async function getDetailByIndex(index: string) {
   return await contract.methods.getDetailByIndex(index).call({});
 }
@@ -173,17 +182,17 @@ async function ethereumRequestAddChain(
 }
 
 export async function switchToBSCTestnet() {
-  const hexChainId = BSCTESTNETID;
-  const chainName = "Binance Chain Testnet";
-  const rpcUrls = ["https://data-seed-prebsc-1-s3.binance.org:8545/"];
-  const blockExplorerUrls = ["https://testnet.bscscan.com/"];
+  const hexChainId = OPBNBTESTNETID;
+  const chainName = "opBNB Testnet";
+  const rpcUrls = ["https://opbnb-testnet-rpc.bnbchain.org"];
+  const blockExplorerUrls = ["https://opbnb-testnet.bscscan.com/"];
   const switched = await switch_to_Chain(hexChainId);
   if (!switched) {
     await ethereumRequestAddChain(
       hexChainId,
       chainName,
-      "BNB",
-      "BNB",
+      "tBNB",
+      "tBNB",
       18,
       rpcUrls,
       blockExplorerUrls,
