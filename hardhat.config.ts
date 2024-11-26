@@ -30,10 +30,10 @@ const config: HardhatUserConfig = {
     //   accounts:
     //     process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     // },
-    // bsctestnet: {
-    //   url: process.env.BSC_TESTNET_API || "",
-    //   accounts: process.env.KEY_DONAU !== undefined ? [process.env.KEY_DONAU] : [],
-    // }
+    opbnbtestnet: {
+      url: process.env.OPBNB_TESTNET_API || "",
+      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    }
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
