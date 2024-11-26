@@ -42,8 +42,8 @@ Now go to index.html and replace  data-title with a custom title and data-contra
 Finally npm run build and you got the parcel build. Upload that file to a hosting like cloudflare pages and your escrow will be online and you are ready to work as an Escrow Agent!
 
 ## NOTE
-The current source code contains a demo and has hardcoded contract addresses pointing to BSC testnet
-Deploy your own version and replace these values
+The current source code contains a demo and has hardcoded contract addresses pointing to opBNB testnet
+Deploy your own version if you want to use it.
 
 ## Escrow States
 
