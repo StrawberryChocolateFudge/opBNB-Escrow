@@ -10,6 +10,13 @@ import {
 } from "./lib/web3";
 
 (async function init() {
+  const path = location.pathname;
+
+  if (path === "/terms") {
+    await getPage(PageState.termsPage, {});
+    return;
+  }
+
   const urlSearchParams = new URLSearchParams(window.location.search);
   const cparam = urlSearchParams.get("c");
   const escrowIndex = urlSearchParams.get("i");
@@ -36,7 +43,10 @@ import {
     }
 
     if (escrowIndex === null) {
-      await getPage(PageState.connectWallet, { agentName });
+      await getPage(PageState.connectWallet, {
+        agentName,
+        nextPage: PageState.FindOrCreate,
+      });
       return;
     } else {
       const notvalidNr = isNaN(parseInt(escrowIndex));
@@ -45,7 +55,10 @@ import {
         return;
       }
 
-      await getPage(PageState.connectWallet, { agentName });
+      await getPage(PageState.connectWallet, {
+        agentName,
+        nextPage: PageState.Escrow,
+      });
     }
   }
 })();
