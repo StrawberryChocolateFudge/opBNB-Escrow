@@ -4,11 +4,13 @@ import { html, nothing, render } from "lit-html";
 import Web3 from "web3";
 import {
   acceptTermsAction,
+  allEscrowsActions,
   connectWalletAction,
   escrowActions,
   findOrCreateActions,
   historyPageActions,
   newEscrowActions,
+  registerAgentActions,
 } from "./actions";
 import { getCurrentChainCurrency } from "./web3";
 import { terms } from "./terms";
@@ -17,13 +19,27 @@ export function getById(id: string) {
   return document.getElementById(id);
 }
 
+export function updateUrlParams(c, i) {
+  const urlParams = new URLSearchParams(window.location.search);
+  if (c) {
+    urlParams.set("c", c);
+  }
+  if (i) {
+    urlParams.set("i", i);
+  }
+  window.location.search = urlParams.toString();
+}
+
 export enum PageState {
+  AllEscrows,
+  registerOrUpdate,
   FindOrCreate,
   NewEscrow,
   Escrow,
   History,
   connectWallet,
   termsPage,
+  notFound,
 }
 
 export function createSuccess(msg: string, nr) {
@@ -53,12 +69,22 @@ export function renderError(err: string) {
   errSlot.innerHTML = err;
 }
 
+
+
 export async function getPage(page: PageState, args: any) {
   const main = getById("main") as HTMLElement;
   const body = document.getElementsByTagName("body");
   const title = body[0].dataset.title as any;
 
   switch (page) {
+    case PageState.AllEscrows:
+      render(AllEscrows(), main);
+      allEscrowsActions();
+      break;
+    case PageState.registerOrUpdate:
+      render(RegisterAgent(), main);
+      registerAgentActions();
+      break;
     case PageState.FindOrCreate:
       render(findOrCreate(title), main);
       findOrCreateActions();
@@ -79,12 +105,15 @@ export async function getPage(page: PageState, args: any) {
       historyPageActions();
       break;
     case PageState.connectWallet:
-      render(ConnectWallet(title), main);
+      render(ConnectWallet(args.agentName), main);
       connectWalletAction();
       break;
     case PageState.termsPage:
       render(TermsPage(terms), main);
       acceptTermsAction();
+      break;
+    case PageState.notFound:
+      render(NotFoundPage(), main);
       break;
     default:
       break;
@@ -393,3 +422,47 @@ export const TermsPage = (terms: string) =>
 </h2>
 </article>
 </div>`;
+
+export const AllEscrows = () =>
+  html`<article class="maxwidth-500px center">
+  <h1 class="text-align-center">opBNB Escrow</h1>
+  <button class="width-200 center" id="becomeagent">Become an Escrow Agent</button>
+  <hr/>
+</article>`;
+
+export const NotFoundPage = () =>
+  html`<article class="maxwidrh-500px center">
+  <h1 class="text-align-center">Not Found</h1>
+</article>`;
+
+export const RegisterAgent = () =>
+  html`<article class="maxwidth-500px center">
+  <h1 class="text-align-center">Agent Registry</h1>
+  <p>Sign up as an escrow agent and resolve disputes for a fee. Use your telegram handle when registering so you can be contacted.</p>
+  <input 
+  class="width-200 center maxwidth-200"
+  type="text"
+  id="agentName"
+  title="Telegram Handle"
+  minlength="5"
+  disabled
+  />
+  
+  <div class="row">
+  <button class="width-200 marginRight10 lightgray" id="register-backbutton">Back</button>
+
+  <button class="width-200 marginLeft10 " id="register-agent">Register</button>
+
+  </div>
+  <div class="text-align-center hide" id="escrow-link-container">
+      <a
+        class="cursor-pointer"
+        id="myescrow-button"
+        class="text-align-center"
+        rel="noopener"
+        target="_blank"
+        >Link to My Escrow</a
+      >
+    </div>
+
+</article>`;
