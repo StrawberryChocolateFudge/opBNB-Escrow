@@ -47,22 +47,30 @@ import {
 } from "./web3";
 
 const max800 = 800;
-export async function connectWalletAction() {
+export async function connectWalletAction(nextPage: PageState) {
   const bttn = getById("connect-wallet") as HTMLElement;
   bttn.onclick = async () => {
     await switchToBSCTestnet().then(async () => {
       await requestAccounts();
 
-      getPage(PageState.FindOrCreate, {});
+      if (nextPage === PageState.FindOrCreate) {
+        getPage(PageState.FindOrCreate, {});
+      } else if (nextPage === PageState.Escrow) {
+        const urlSearchParams = new URLSearchParams(window.location.search);
+        const nr = urlSearchParams.get("i") as string;
+
+        await goToEscrowPageAt(nr);
+      }
     });
   };
 }
 
-async function clickEscrowLink(el: HTMLElement) {
+async function goToEscrowPageAt(nr) {
   const cAddress = escrowContractAddress();
   const escrowContract = getEscrowContract(cAddress);
-  const nr = el.dataset.nr as any;
+  // get the escrow number from the url
   const escrow = await getDetailByIndex(escrowContract, nr);
+
   const address = await getAddress();
   const arbiter = await getArbiter(escrowContract);
   let fee = await getFee(escrowContract, escrow.pay);
@@ -72,31 +80,23 @@ async function clickEscrowLink(el: HTMLElement) {
   } else {
     fee = 0;
   }
-
   getPage(PageState.Escrow, { data: escrow, address, arbiter, nr, fee });
+}
+
+async function clickEscrowLink(el: HTMLElement) {
+  const nr = el.dataset.nr as any;
+
+  await goToEscrowPageAt(nr);
 }
 export async function historyPageActions() {
   const back = getById("backButton") as HTMLElement;
   const bttns = document.getElementsByClassName("historyPageButtons");
-  const cAddress = escrowContractAddress();
-  const escrowContract = getEscrowContract(cAddress);
 
   for (let i = 0; i < bttns.length; i++) {
     const bttn = bttns[i] as HTMLElement;
     bttn.onclick = async function () {
       const nr = bttn.dataset.nr as any;
-      const escrow = await getDetailByIndex(escrowContract, nr);
-      const address = await getAddress();
-      const arbiter = await getArbiter(escrowContract);
-      let fee = await getFee(escrowContract, escrow.pay);
-      if (fee[1] !== undefined) {
-        const addedFees = parseInt(fee[1]) + parseInt(fee[2]);
-        fee = addedFees.toString();
-      } else {
-        fee = 0;
-      }
-
-      getPage(PageState.Escrow, { data: escrow, address, arbiter, nr, fee });
+      await goToEscrowPageAt(nr);
     };
   }
 
@@ -107,6 +107,20 @@ export async function historyPageActions() {
 
 export async function escrowActions(detail, address, arbiter, nr) {
   const back = getById("backButton") as HTMLElement;
+  const termsButton = getById("escrow-terms-button") as HTMLElement;
+  const copyButton = getById("copyButton") as HTMLDivElement;
+
+  copyButton.onclick = function () {
+    const url = new URL(window.location.href);
+    url.searchParams.set("i", nr);
+    navigator.clipboard.writeText(url.href);
+  };
+
+  termsButton.onclick = function () {
+    renderError("");
+    getPage(PageState.termsPage, {});
+  };
+
   const cAddress = escrowContractAddress();
   const escrowContract = getEscrowContract(cAddress);
 
@@ -117,22 +131,7 @@ export async function escrowActions(detail, address, arbiter, nr) {
     renderError("An Error Occured");
   };
   const onReceipt = async (receipt) => {
-    const escrow = await getDetailByIndex(escrowContract, nr);
-    let fee = await getFee(escrowContract, escrow.pay);
-    if (fee[1] !== undefined) {
-      const addedFees = parseInt(fee[1]) + parseInt(fee[2]);
-      fee = addedFees.toString();
-    } else {
-      fee = 0;
-    }
-
-    getPage(PageState.Escrow, {
-      data: escrow,
-      address,
-      arbiter,
-      nr,
-      fee,
-    });
+    await goToEscrowPageAt(nr);
   };
   const simpleTerms = getSimpleTermsContract();
   const accepted = await getAcceptedTerms(simpleTerms, address);
@@ -448,7 +447,15 @@ export async function acceptTermsAction() {
   const accepted = await getAcceptedTerms(simpleTermsContact, address);
 
   backButton.onclick = async function () {
-    getPage(PageState.FindOrCreate, {});
+    //If there is an i
+    const urlParams = new URLSearchParams(window.location.search);
+    const nr = urlParams.get("i");
+    if (nr) {
+      //Go to the Escrow page
+      goToEscrowPageAt(nr);
+    } else {
+      getPage(PageState.FindOrCreate, {});
+    }
   };
 
   if (!accepted) {
