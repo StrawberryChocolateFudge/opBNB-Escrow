@@ -12,7 +12,7 @@ contract AgentRegistry {
 
     mapping(address => address) public agentEscrowContracts;
 
-    //TODO: maybe an array for escrow contracts for faster fetching
+    address[] public allEscrowContracts;
 
     address public simpleTerms;
 
@@ -32,6 +32,7 @@ contract AgentRegistry {
         Escrow escrow = new Escrow(msg.sender, simpleTerms);
 
         agentEscrowContracts[msg.sender] = address(escrow);
+        allEscrowContracts.push(address(escrow));
     }
 
     function updateAgentName(string memory newName) external {
@@ -43,5 +44,20 @@ contract AgentRegistry {
         return
             keccak256(abi.encodePacked(agentName[msg.sender])) ==
             keccak256(abi.encodePacked(""));
+    }
+
+    function getAllEscrowContracts() external view returns (address[] memory) {
+        return allEscrowContracts;
+    }
+
+    //Returns the name of the agent, the address of the contract and if the contract is deprecated
+    function getContractAndNameByIndex(
+        uint256 _index
+    ) external view returns (string memory, address, bool) {
+        return (
+            agentName[agentAddress[_index]],
+            agentEscrowContracts[agentAddress[_index]],
+            Escrow(agentEscrowContracts[agentAddress[_index]]).isDeprecated()
+        );
     }
 }
