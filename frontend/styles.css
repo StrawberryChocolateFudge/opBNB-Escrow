@@ -2,6 +2,14 @@
   margin-bottom: 20px !important;
 }
 
+.marginLeft10 {
+  margin-left: 10px;
+}
+
+.marginRight10 {
+  margin-right: 10px;
+}
+
 .width-200 {
   width: 200px;
 }
@@ -21,9 +29,11 @@
 .center {
   margin: 0 auto;
 }
+
 .text-align-center {
   text-align: center;
 }
+
 .cursor-pointer {
   cursor: pointer;
 }
@@ -43,6 +53,17 @@
   justify-content: space-around;
 }
 
+.centeredRow {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+
+.lightgray {
+  background-color: lightgray;
+  border-color: lightgray;
+}
+
 .backbutton {
   width: 30px !important;
   border-radius: 25px;
@@ -52,6 +73,52 @@
   background-color: #ccc;
 }
 
-.terms-pre{
-  white-space:pre-wrap;
+.terms-pre {
+  white-space: pre-wrap;
+}
+
+.lds-dual-ring {
+  /* change color here */
+  color: #1c4c5b
+}
+
+.lds-dual-ring,
+.lds-dual-ring:after {
+  box-sizing: border-box;
+}
+
+.lds-dual-ring {
+  display: inline-block;
+  width: 80px;
+  height: 80px;
+}
+
+.lds-dual-ring:after {
+  content: " ";
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin: 8px;
+  border-radius: 50%;
+  border: 6.4px solid currentColor;
+  border-color: currentColor transparent currentColor transparent;
+  animation: lds-dual-ring 1.2s linear infinite;
+}
+
+@keyframes lds-dual-ring {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.hide {
+  display: none;
+}
+
+.show {
+  display: block;
 }
