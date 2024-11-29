@@ -11,6 +11,7 @@ import {
   hideButton,
   PageState,
   renderError,
+  updateUrlParams,
 } from "./views";
 import {
   acceptTerms,
@@ -19,16 +20,29 @@ import {
   createEscrow,
   depositPay,
   deprecateEscrow,
+  escrowContractAddress,
   getAcceptedTerms,
   getAddress,
+  getAgentNameByAddress,
+  getAgentRegistry,
+  getAgentRegistryContractJSONRpcProvider,
+  getAllEscrowContracts,
   getArbiter,
+  getContractAndNameByIndex,
   getDeprecated,
   getDetailByIndex,
+  getEscrowByAddress,
+  getEscrowContract,
   getFee,
   getMyDetails,
+  getRegistryIndex,
+  getSimpleTermsContract,
+  getWeb3,
   refund,
+  registerAgent,
   requestAccounts,
   switchToBSCTestnet,
+  updateAgentName,
   withdrawPay,
 } from "./web3";
 
@@ -45,11 +59,13 @@ export async function connectWalletAction() {
 }
 
 async function clickEscrowLink(el: HTMLElement) {
+  const cAddress = escrowContractAddress();
+  const escrowContract = getEscrowContract(cAddress);
   const nr = el.dataset.nr as any;
-  const escrow = await getDetailByIndex(nr);
+  const escrow = await getDetailByIndex(escrowContract, nr);
   const address = await getAddress();
-  const arbiter = await getArbiter();
-  let fee = await getFee(escrow.pay);
+  const arbiter = await getArbiter(escrowContract);
+  let fee = await getFee(escrowContract, escrow.pay);
   if (fee[1] !== undefined) {
     const addedFees = parseInt(fee[1]) + parseInt(fee[2]);
     fee = addedFees.toString();
@@ -62,15 +78,17 @@ async function clickEscrowLink(el: HTMLElement) {
 export async function historyPageActions() {
   const back = getById("backButton") as HTMLElement;
   const bttns = document.getElementsByClassName("historyPageButtons");
+  const cAddress = escrowContractAddress();
+  const escrowContract = getEscrowContract(cAddress);
 
   for (let i = 0; i < bttns.length; i++) {
     const bttn = bttns[i] as HTMLElement;
     bttn.onclick = async function () {
       const nr = bttn.dataset.nr as any;
-      const escrow = await getDetailByIndex(nr);
+      const escrow = await getDetailByIndex(escrowContract, nr);
       const address = await getAddress();
-      const arbiter = await getArbiter();
-      let fee = await getFee(escrow.pay);
+      const arbiter = await getArbiter(escrowContract);
+      let fee = await getFee(escrowContract, escrow.pay);
       if (fee[1] !== undefined) {
         const addedFees = parseInt(fee[1]) + parseInt(fee[2]);
         fee = addedFees.toString();
@@ -89,6 +107,9 @@ export async function historyPageActions() {
 
 export async function escrowActions(detail, address, arbiter, nr) {
   const back = getById("backButton") as HTMLElement;
+  const cAddress = escrowContractAddress();
+  const escrowContract = getEscrowContract(cAddress);
+
   back.onclick = function () {
     getPage(PageState.FindOrCreate, {});
   };
@@ -96,8 +117,8 @@ export async function escrowActions(detail, address, arbiter, nr) {
     renderError("An Error Occured");
   };
   const onReceipt = async (receipt) => {
-    const escrow = await getDetailByIndex(nr);
-    let fee = await getFee(escrow.pay);
+    const escrow = await getDetailByIndex(escrowContract, nr);
+    let fee = await getFee(escrowContract, escrow.pay);
     if (fee[1] !== undefined) {
       const addedFees = parseInt(fee[1]) + parseInt(fee[2]);
       fee = addedFees.toString();
@@ -113,7 +134,8 @@ export async function escrowActions(detail, address, arbiter, nr) {
       fee,
     });
   };
-  const accepted = await getAcceptedTerms(address);
+  const simpleTerms = getSimpleTermsContract();
+  const accepted = await getAcceptedTerms(simpleTerms, address);
 
   switch (address) {
     case detail.buyer:
@@ -134,7 +156,14 @@ export async function escrowActions(detail, address, arbiter, nr) {
                 return;
               }
 
-              await depositPay(nr, amountEl.value, address, onError, onReceipt);
+              await depositPay(
+                escrowContract,
+                nr,
+                amountEl.value,
+                address,
+                onError,
+                onReceipt,
+              );
             } else {
               renderError("You need to accept the terms first!");
             }
@@ -148,7 +177,13 @@ export async function escrowActions(detail, address, arbiter, nr) {
           renderError("");
 
           if (accepted) {
-            await confirmDelivery(nr, address, onError, onReceipt);
+            await confirmDelivery(
+              escrowContract,
+              nr,
+              address,
+              onError,
+              onReceipt,
+            );
           } else {
             renderError("You need to accept the terms first!");
           }
@@ -159,7 +194,7 @@ export async function escrowActions(detail, address, arbiter, nr) {
           renderError("");
 
           if (accepted) {
-            await refund(nr, address, onError, onReceipt);
+            await refund(escrowContract, nr, address, onError, onReceipt);
           } else {
             renderError("You need to accept the terms first!");
           }
@@ -175,7 +210,13 @@ export async function escrowActions(detail, address, arbiter, nr) {
           renderError("");
 
           if (accepted) {
-            await confirmRefund(nr, address, onError, onReceipt);
+            await confirmRefund(
+              escrowContract,
+              nr,
+              address,
+              onError,
+              onReceipt,
+            );
           } else {
             renderError("You need to accept the terms first!");
           }
@@ -187,7 +228,7 @@ export async function escrowActions(detail, address, arbiter, nr) {
           renderError("");
 
           if (accepted) {
-            await withdrawPay(nr, address, onError, onReceipt);
+            await withdrawPay(escrowContract, nr, address, onError, onReceipt);
           } else {
             renderError("You need to accept the terms first!");
           }
@@ -204,7 +245,13 @@ export async function escrowActions(detail, address, arbiter, nr) {
           renderError("");
 
           if (accepted) {
-            await confirmRefund(nr, address, onError, onReceipt);
+            await confirmRefund(
+              escrowContract,
+              nr,
+              address,
+              onError,
+              onReceipt,
+            );
           } else {
             renderError("You need to accept the terms first!");
           }
@@ -215,7 +262,13 @@ export async function escrowActions(detail, address, arbiter, nr) {
           renderError("");
 
           if (accepted) {
-            await confirmDelivery(nr, address, onError, onReceipt);
+            await confirmDelivery(
+              escrowContract,
+              nr,
+              address,
+              onError,
+              onReceipt,
+            );
           } else {
             renderError("You need to accept the terms first!");
           }
@@ -232,6 +285,8 @@ export async function newEscrowActions(arbiterCalls) {
   const sellerInput = getById("seller-address-input") as HTMLInputElement;
   const createBttn = getById("new-escrow") as HTMLElement;
   const back = getById("backButton") as HTMLElement;
+  const cAddress = escrowContractAddress();
+  const escrowContract = getEscrowContract(cAddress);
 
   if (arbiterCalls) {
     const deprecateEscrowBtn = getById("deprecate-escrow") as HTMLElement;
@@ -244,7 +299,7 @@ export async function newEscrowActions(arbiterCalls) {
       };
       const address = await getAddress();
 
-      await deprecateEscrow(address, onError, onReceipt);
+      await deprecateEscrow(escrowContract, address, onError, onReceipt);
     };
   }
 
@@ -278,14 +333,17 @@ export async function newEscrowActions(arbiterCalls) {
     };
 
     const address = await getAddress();
-
-    const accepted = await getAcceptedTerms(address);
+    const simpleTerms = getSimpleTermsContract();
+    const accepted = await getAcceptedTerms(simpleTerms, address);
+    const cAddress = escrowContractAddress();
+    const escrowContract = getEscrowContract(cAddress);
 
     if (accepted) {
       hideButton(back, "hide");
       hideButton(createBttn, "hide");
       try {
         await createEscrow(
+          escrowContract,
           buyerInput.value,
           sellerInput.value,
           address,
@@ -311,9 +369,6 @@ export async function findOrCreateActions() {
   const newEscrow = getById("new-escrow") as HTMLElement;
   const termsEl = getById("terms-button") as HTMLAnchorElement;
 
-
-
-
   termsEl.onclick = function () {
     renderError("");
     getPage(PageState.termsPage, {});
@@ -330,12 +385,17 @@ export async function findOrCreateActions() {
       return;
     }
     await requestAccounts();
+    const cAddress = escrowContractAddress();
+    const escrowContract = getEscrowContract(cAddress);
     try {
-      const detail = await getDetailByIndex(escrownrInput.value);
+      const detail = await getDetailByIndex(
+        escrowContract,
+        escrownrInput.value,
+      );
 
       const address = await getAddress();
-      const arbiter = await getArbiter();
-      let fee = await getFee(detail.pay);
+      const arbiter = await getArbiter(escrowContract);
+      let fee = await getFee(escrowContract, detail.pay);
       if (fee[1] !== undefined) {
         const addedFees = parseInt(fee[1]) + parseInt(fee[2]);
         fee = addedFees.toString();
@@ -356,9 +416,11 @@ export async function findOrCreateActions() {
   };
 
   history.onclick = async function () {
+    const cAddress = escrowContractAddress();
+    const escrowContract = getEscrowContract(cAddress);
     const address = await getAddress();
-    const myDetails = await getMyDetails(address);
-    const arbiter = await getArbiter();
+    const myDetails = await getMyDetails(escrowContract, address);
+    const arbiter = await getArbiter(escrowContract);
     getPage(PageState.History, { data: myDetails, address, arbiter });
   };
 
@@ -368,9 +430,11 @@ export async function findOrCreateActions() {
 }
 
 async function newEscrowPage() {
-  const arbiter = await getArbiter();
+  const cAddress = escrowContractAddress();
+  const escrowContract = getEscrowContract(cAddress);
+  const arbiter = await getArbiter(escrowContract);
   const address = await getAddress();
-  const deprecated = await getDeprecated();
+  const deprecated = await getDeprecated(escrowContract);
   getPage(PageState.NewEscrow, {
     data: { arbiterCalls: address === arbiter, deprecated },
   });
@@ -380,7 +444,8 @@ export async function acceptTermsAction() {
   const backButton = getById("terms-back") as HTMLButtonElement;
   const acceptButton = getById("accept-terms") as HTMLButtonElement;
   const address = await getAddress();
-  const accepted = await getAcceptedTerms(address);
+  const simpleTermsContact = getSimpleTermsContract();
+  const accepted = await getAcceptedTerms(simpleTermsContact, address);
 
   backButton.onclick = async function () {
     getPage(PageState.FindOrCreate, {});
@@ -399,8 +464,95 @@ export async function acceptTermsAction() {
       getPage(PageState.FindOrCreate, {});
     };
 
-
     const termsHash = hashEscrowAgreement();
-    await acceptTerms(termsHash, address, onError, onReceipt);
+    await acceptTerms(
+      simpleTermsContact,
+      termsHash,
+      address,
+      onError,
+      onReceipt,
+    );
   };
+}
+
+export async function allEscrowsActions() {
+  const becomeAgentbutton = getById("becomeagent") as HTMLButtonElement;
+
+  becomeAgentbutton.onclick = async function () {
+    await switchToBSCTestnet().then(async () => {
+      await requestAccounts();
+
+      getPage(PageState.registerOrUpdate, {});
+    });
+  };
+}
+
+export async function registerAgentActions() {
+  const input = getById("agentName") as HTMLInputElement;
+  const registerButton = getById("register-agent") as HTMLButtonElement;
+  const backButton = getById("register-backbutton") as HTMLButtonElement;
+
+  //Check if the address registered already
+  const agentRegistry = getAgentRegistry();
+
+  //Check if the agent registered already, if yes then allow update
+  //If no then allow create
+
+  backButton.onclick = function () {
+    getPage(PageState.AllEscrows, {});
+  };
+
+  const address = await getAddress();
+
+  const agentName = await getAgentNameByAddress(agentRegistry, address);
+
+  input.value = agentName;
+  input.disabled = false;
+  const onError = (error, receipt) => {
+    console.log("error");
+    console.log(error);
+  };
+
+  const onReceipt = (receipt) => {
+    getPage(PageState.AllEscrows, {});
+  };
+
+  if (agentName != "") {
+    registerButton.textContent = "Update Handle";
+    registerButton.onclick = async function (event) {
+      event?.preventDefault();
+      await updateAgentName(
+        agentRegistry,
+        input.value,
+        address,
+        onError,
+        onReceipt,
+      );
+    };
+
+    const myEscrowLink = getById("myescrow-button") as HTMLLinkElement;
+    myEscrowLink.onclick = async function (event) {
+      event?.preventDefault();
+      const escrowC = await getEscrowByAddress(agentRegistry, address);
+      updateUrlParams(escrowC, null);
+      await getPage(PageState.FindOrCreate, { contract: escrowC });
+    };
+
+    const container = getById("escrow-link-container") as HTMLElement;
+    container.classList.remove("hide");
+  } else {
+    registerButton.textContent = "Register";
+    registerButton.onclick = async function (event) {
+      event?.preventDefault();
+      const localscopeinput = getById("agentName") as HTMLInputElement;
+
+      await registerAgent(
+        agentRegistry,
+        localscopeinput.value,
+        address,
+        onError,
+        onReceipt,
+      );
+    };
+  }
 }
