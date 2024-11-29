@@ -69,8 +69,6 @@ export function renderError(err: string) {
   errSlot.innerHTML = err;
 }
 
-
-
 export async function getPage(page: PageState, args: any) {
   const main = getById("main") as HTMLElement;
   const body = document.getElementsByTagName("body");
@@ -106,7 +104,7 @@ export async function getPage(page: PageState, args: any) {
       break;
     case PageState.connectWallet:
       render(ConnectWallet(args.agentName), main);
-      connectWalletAction();
+      connectWalletAction(args.nextPage);
       break;
     case PageState.termsPage:
       render(TermsPage(terms), main);
@@ -221,7 +219,7 @@ const getAction = (address, buyer, seller, arbiter, state, withdrawn) => {
 
 const backButton = () =>
   html`
-  <div id="backButton" class="cursor-pointer">
+  <div id="backButton" class="cursor-pointer hover-light roundedSquare" style="width: 40px">
     <svg
       xmlns:dc="http://purl.org/dc/elements/1.1/"
       xmlns:cc="http://creativecommons.org/ns#"
@@ -258,12 +256,21 @@ const backButton = () =>
   </div>
 `;
 
-// Action button toggles based on if I'm the arbiter, the buyer or the seller
-export const EscrowPage = (escrow, address, arbiter, escrowNr, fee) =>
+const copyButton = () =>
   html`
+<div id="copyButton" class="cursor-pointer hover-light roundedSquare"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z"/></svg></div>`;
+
+// Action button toggles based on if I'm the arbiter, the buyer or the seller
+export const EscrowPage = (escrow, address, arbiter, escrowNr, fee) => {
+  const urlSearchParams = new URLSearchParams(window.location.search);
+  const escrowIndex = urlSearchParams.get("i");
+
+  return html`
   <article id="escrow-body" data-nr="${escrowNr}" class="maxwidth-800px center">
-    ${backButton()}
+  <div class="rowBetween ${escrowIndex ? "hide" : ""}">
+    ${backButton()} ${copyButton()}</div>
     <h3 class="text-align-center">Escrow ${escrowNr}</h3>
+   
     <div class="column">
       ${DisplayInTable("Buyer", escrow.buyer)}${
     DisplayInTable(
@@ -299,8 +306,19 @@ export const EscrowPage = (escrow, address, arbiter, escrowNr, fee) =>
       escrow.withdrawn,
     )
   }
+    <div class="text-align-center">
+      <a
+        class="cursor-pointer"
+        id="escrow-terms-button"
+        class="text-align-center"
+        rel="noopener"
+        target="_blank"
+        >Terms</a
+      >
+    </div>
   </article>
 `;
+};
 
 const HistoryElement = (title, data) =>
   html` <table>
