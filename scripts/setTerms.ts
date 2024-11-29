@@ -1,8 +1,8 @@
 import { hashEscrowAgreement } from "../frontend/lib/terms";
 import { ethers } from "hardhat";
 
-//OPBNB TESTNET ADDRESS FOR MY ESCROW
-const simpleTermsAddress = "0x30A31f1A6bD5e2b95FaAD4C6b8899886754d9B75";
+//OPBNB TESTNET ADDRESS SimpleTerms
+const simpleTermsAddress = "0x766c30d0725bC93cC0d7F9B7c3C6E03c039e0981";
 
 async function main() {
   //Connect to the escrow contract and set the terms
