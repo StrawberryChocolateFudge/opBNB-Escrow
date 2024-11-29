@@ -446,8 +446,7 @@ export async function acceptTermsAction() {
   const simpleTermsContact = getSimpleTermsContract();
   const accepted = await getAcceptedTerms(simpleTermsContact, address);
 
-  backButton.onclick = async function () {
-    //If there is an i
+  async function goback() {
     const urlParams = new URLSearchParams(window.location.search);
     const nr = urlParams.get("i");
     if (nr) {
@@ -456,6 +455,11 @@ export async function acceptTermsAction() {
     } else {
       getPage(PageState.FindOrCreate, {});
     }
+  }
+
+  backButton.onclick = async function () {
+    //If there is an i
+    await goback();
   };
 
   if (!accepted) {
@@ -467,8 +471,8 @@ export async function acceptTermsAction() {
       renderError("An error Occured");
       console.log(err);
     };
-    const onReceipt = (receipt) => {
-      getPage(PageState.FindOrCreate, {});
+    const onReceipt = async (receipt) => {
+      await goback();
     };
 
     const termsHash = hashEscrowAgreement();
