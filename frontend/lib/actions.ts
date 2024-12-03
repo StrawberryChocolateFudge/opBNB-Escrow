@@ -414,14 +414,14 @@ export async function findOrCreateActions() {
     }
   };
 
-  history.onclick = async function () {
-    const cAddress = escrowContractAddress();
-    const escrowContract = getEscrowContract(cAddress);
-    const address = await getAddress();
-    const myDetails = await getMyDetails(escrowContract, address);
-    const arbiter = await getArbiter(escrowContract);
-    getPage(PageState.History, { data: myDetails, address, arbiter });
-  };
+  // history.onclick = async function () {
+  //   const cAddress = escrowContractAddress();
+  //   const escrowContract = getEscrowContract(cAddress);
+  //   const address = await getAddress();
+  //   const myDetails = await getMyDetails(escrowContract, address);
+  //   const arbiter = await getArbiter(escrowContract);
+  //   getPage(PageState.History, { data: myDetails, address, arbiter });
+  // };
 
   newEscrow.onclick = async function () {
     newEscrowPage();
@@ -546,7 +546,7 @@ export async function registerAgentActions() {
       event?.preventDefault();
       const escrowC = await getEscrowByAddress(agentRegistry, address);
       updateUrlParams(escrowC, null);
-      await getPage(PageState.FindOrCreate, { contract: escrowC });
+      // await getPage(PageState.FindOrCreate, { contract: escrowC });
     };
 
     const container = getById("escrow-link-container") as HTMLElement;
