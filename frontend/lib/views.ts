@@ -398,11 +398,11 @@ export const findOrCreate = (title: string) =>
     />
     <div id="message-slot" class="text-align-center"></div>
     <button class="width-200 center" id="find-escrow">Find</button>
-    <div class="text-align-center">
+    <!-- <div class="text-align-center">
       <a class="cursor-pointer" id="historyPage">History</a>
-    </div>
+    </div> -->
     <hr />
-    <h4 class="text-align-center">Don't have an Escrow?</h4>
+    <!-- <h4 class="text-align-center">Don't have an Escrow?</h4> -->
     <button id="new-escrow" class="width-200 center">Create new</button>
     <div class="text-align-center">
       <a
@@ -443,7 +443,7 @@ export const TermsPage = (terms: string) =>
 
 export const AllEscrows = () =>
   html`<article class="maxwidth-500px center">
-  <h1 class="text-align-center">opBNB Escrow</h1>
+  <h1 class="text-align-center">Quick Escrow</h1>
   <button class="width-200 center" id="becomeagent">Become an Escrow Agent</button>
   <hr/>
 </article>`;
