@@ -1,5 +1,5 @@
-# opBNB Escrow
-
+# quickescrow.link
+available at https://quickescrow.link
 This full stack escrow application helps facilitate payments between buyers and sellers using an agent for dispute resolution.
 It was created with Hardhat and Parcel.
 
