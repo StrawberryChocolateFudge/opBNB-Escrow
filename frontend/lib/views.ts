@@ -443,7 +443,8 @@ export const TermsPage = (terms: string) =>
 
 export const AllEscrows = () =>
   html`<article class="maxwidth-500px center">
-  <h1 class="text-align-center">Quick Escrow</h1>
+  <h1 class="text-align-center">Quick Escrow links</h1>
+  
   <button class="width-200 center" id="becomeagent">Become an Escrow Agent</button>
   <hr/>
 </article>`;
