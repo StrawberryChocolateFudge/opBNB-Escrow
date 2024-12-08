@@ -269,7 +269,7 @@ export const EscrowPage = (escrow, address, arbiter, escrowNr, fee) => {
   <article id="escrow-body" data-nr="${escrowNr}" class="maxwidth-800px center">
   <div class="rowBetween ${escrowIndex ? "hide" : ""}">
     ${backButton()} ${copyButton()}</div>
-    <h3 class="text-align-center">Escrow ${escrowNr}</h3>
+    <h3 class="text-align-center">${logo()} Escrow ${escrowNr}</h3>
    
     <div class="column">
       ${DisplayInTable("Buyer", escrow.buyer)}${
@@ -351,7 +351,7 @@ export const NewEscrow = (arbiterCalls, deprecated) =>
   class="maxwidth-500px center"
 >
   ${backButton()}
-  <h3 class="text-align-center">Create new Escrow</h3>
+  <h3 class="text-align-center"> Create new Escrow</h3>
   <input
     class="maxwidth-500px center "
     type="text"
@@ -388,7 +388,7 @@ export const NewEscrow = (arbiterCalls, deprecated) =>
 export const findOrCreate = (title: string) =>
   html`
   <article class="maxwidth-500px center">
-    <h4 class="text-align-center">Find your Escrow!</h4>
+    <h4 class="text-align-center">${logo()} Find your Escrow</h4>
     <input
       class="width-200 center maxwidth-200"
       type="number"
@@ -398,10 +398,10 @@ export const findOrCreate = (title: string) =>
     />
     <div id="message-slot" class="text-align-center"></div>
     <button class="width-200 center" id="find-escrow">Find</button>
-    <!-- <div class="text-align-center">
-      <a class="cursor-pointer" id="historyPage">History</a>
-    </div> -->
+
     <hr />
+    <img src="./imgs/search.svg"/>
+    <div style="margin-bottom: 10px;"></div>
     <!-- <h4 class="text-align-center">Don't have an Escrow?</h4> -->
     <button id="new-escrow" class="width-200 center">Create new</button>
     <div class="text-align-center">
@@ -424,8 +424,9 @@ export const History = () =>
 
 export const ConnectWallet = (title: string) =>
   html`<article class="maxwidth-500px center">
-    <h1 class="text-align-center">${title}</h1>
-    <h4 class="text-align-center">Escrow Service</h4>
+    <h6 class="text-align-center">${title}</h6>
+    <h4 class="text-align-center">${logo()} Escrow Service</h4>
+    <img src="./imgs/connection.svg"/>
     <div id="message-slot" class="text-align-center"></div>
     <button id="connect-wallet" class="maxwidth-200 center">
       Connect Your Wallet
@@ -435,18 +436,23 @@ export const ConnectWallet = (title: string) =>
 export const TermsPage = (terms: string) =>
   html`<div><article class="maxwidth-800px center">
 <h1 class="text-align-center"><button id="terms-back" class="center width-200">Back</button>Terms and conditions</h1>
+<img src="./imgs/office.svg"/>
 <pre class="terms-pre">${terms}</pre>
 <h2><button disabled class="center width-200" id="accept-terms">Accept</button>
 </h2>
 </article>
 </div>`;
 
+const logo = () => html`<img src="./imgs/logo.png" width="40px"/>`;
+
 export const AllEscrows = () =>
   html`<article class="maxwidth-500px center">
-  <h1 class="text-align-center">Quick Escrow links</h1>
-  
-  <button class="width-200 center" id="becomeagent">Become an Escrow Agent</button>
+  <h1 class="text-align-center">  ${logo()}
+ Quick Escrow Links</h1>
+     <img src="./imgs/accept_tasks.svg"/>
   <hr/>
+    <button class="width-200 center" id="becomeagent">Become an Escrow Agent</button>
+
 </article>`;
 
 export const NotFoundPage = () =>
