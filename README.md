@@ -65,15 +65,19 @@ enum State {
 
 These are the important smart contract functions that mutate the state.
 
-`createEscrow(address buyer,address seller`
+`createEscrow(address buyer,address seller,address _ERC20`
 An address can create an escrow if they have accepted the terms.
 The escrows are stored indexed. The state of the created escrow is awaiting_payment
 
 A created escrow is accessed by index as a "detail"
+_ERC20 is the address of the token used. It must be zero address for Gas token payments
 
-`depositPay(uint2546 detail)`
-The pay can be deposited by anyone for a specific escrow. The state of the escrow will become awaiting_delivery
+`depositPay(uint256 detail)`
+The pay can be deposited by the buyer for a specific escrow. The state of the escrow will become awaiting_delivery
 
+
+`depositErc20Pay(uint256 detail, uint256 amount)`
+The pay  can be deposited in ERC20 tokens by the buyer. The spend must be approved first
 
 `confirmDelivery(uint256 detail)`
 The buyer or the agent can confirm the delivery of a service. The agent should only do so on dispute resolution. The state of the escrow will be  delivered
@@ -82,11 +86,8 @@ The buyer or the agent can confirm the delivery of a service. The agent should o
 The seller or the agent can confirm refunding the escrow payment.The state of the escrow will be refunded.
 
 `withdrawPay(uint256 detail)`
-The payment can be only withdrawn by the seller.
+The payment can be only withdrawn by the seller when the state is delivered
 
 `refund(uint256 detail)`
-The payment can be pulled for a refund by the buyer
-
-## PAYMENT LIMIT
-The front end allows maximum 800USD to be escrowed at once with 2% fee. 1% goes to the feeDAO and 1% goes to the escrow agent
+The payment can be pulled for a refund by the buyer when the state is refunded
 
