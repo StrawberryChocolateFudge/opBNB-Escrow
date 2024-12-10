@@ -257,7 +257,6 @@ export function selectableFees() {
 
 export function calculateFeePercentage(agentFee: string) {
   const fee = parseInt(agentFee) + DAOFEE;
-  console.log("FEE", fee);
   return ((100 * fee) / 10000).toFixed(1);
 }
 
