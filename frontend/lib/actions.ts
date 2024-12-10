@@ -14,28 +14,36 @@ import {
 } from "./views";
 import {
   acceptTerms,
+  approve,
   confirmDelivery,
   confirmRefund,
+  convertWeiToString,
   createEscrow,
+  depositERC20Pay,
   depositPay,
   deprecateEscrow,
   escrowContractAddress,
   getAcceptedTerms,
   getAddress,
+  getAgentFee,
   getAgentNameByAddress,
   getAgentRegistry,
   getAgentRegistryContractJSONRpcProvider,
   getAllEscrowContracts,
+  getAllowance,
   getArbiter,
   getContractAndNameByIndex,
   getDeprecated,
   getDetailByIndex,
+  getERC20Contract,
+  getERC20ContractJSONRPC,
   getEscrowByAddress,
   getEscrowContract,
   getFee,
   getMyDetails,
   getRegistryIndex,
   getSimpleTermsContract,
+  getSymbol,
   getWeb3,
   refund,
   registerAgent,
@@ -43,6 +51,7 @@ import {
   switchToBSCTestnet,
   updateAgentName,
   withdrawPay,
+  ZEROADDRESS,
 } from "./web3";
 
 const max800 = 800;
@@ -68,18 +77,36 @@ async function goToEscrowPageAt(nr) {
   const cAddress = escrowContractAddress();
   const escrowContract = getEscrowContract(cAddress);
   // get the escrow number from the url
-  const escrow = await getDetailByIndex(escrowContract, nr);
+  const detail = await getDetailByIndex(escrowContract, nr);
 
   const address = await getAddress();
   const arbiter = await getArbiter(escrowContract);
-  let fee = await getFee(escrowContract, escrow.pay);
+  let fee = await getFee(escrowContract, detail.pay);
   if (fee[1] !== undefined) {
     const addedFees = parseInt(fee[1]) + parseInt(fee[2]);
     fee = addedFees.toString();
   } else {
     fee = 0;
   }
-  getPage(PageState.Escrow, { data: escrow, address, arbiter, nr, fee });
+
+  //check if it's an ERC20 and if it is then get the ticker
+  let symbol = "";
+  if (detail.ERC20 == ZEROADDRESS) {
+    symbol = "BNB";
+  } else {
+    const tokenRpc = await getERC20ContractJSONRPC(detail.ERC20);
+    symbol = await getSymbol(tokenRpc);
+  }
+
+  getPage(PageState.Escrow, {
+    data: detail,
+    address,
+    arbiter,
+    nr,
+    fee,
+    symbol,
+    tokenAddress: detail.ERC20,
+  });
 }
 
 async function clickEscrowLink(el: HTMLElement) {
@@ -146,15 +173,60 @@ export async function escrowActions(detail, address, arbiter, nr) {
           renderError("");
           if (parseFloat(amountEl.value) > 0) {
             if (accepted) {
-              
-              await depositPay(
-                escrowContract,
-                nr,
-                amountEl.value,
-                address,
-                onError,
-                onReceipt,
-              );
+              //Check if it's an ERC20 token
+              const isERC20 = detail.ERC20 !== ZEROADDRESS;
+              if (isERC20) {
+                //Then check the allowance
+                const erc20Contract = getERC20Contract(detail.ERC20);
+                const allowance = await getAllowance(
+                  erc20Contract,
+                  address,
+                  cAddress,
+                );
+
+                const allowanceString = convertWeiToString(allowance);
+                //If the allowance is less than the amount, approve spend
+
+                if (parseFloat(allowanceString) < parseFloat(amountEl.value)) {
+                  const onApproveReceipt = async (receipt) => {
+                    //After approval deposit erc20
+                    await depositERC20Pay(
+                      escrowContract,
+                      nr,
+                      amountEl.value,
+                      address,
+                      onError,
+                      onReceipt,
+                    );
+                  };
+                  await approve(
+                    erc20Contract,
+                    address,
+                    cAddress,
+                    amountEl.value,
+                    onApproveReceipt,
+                    onError,
+                  );
+                } else {
+                  await depositERC20Pay(
+                    escrowContract,
+                    nr,
+                    amountEl.value,
+                    address,
+                    onError,
+                    onReceipt,
+                  );
+                }
+              } else {
+                await depositPay(
+                  escrowContract,
+                  nr,
+                  amountEl.value,
+                  address,
+                  onError,
+                  onReceipt,
+                );
+              }
             } else {
               renderError("You need to accept the terms first!");
             }
@@ -274,6 +346,7 @@ export async function escrowActions(detail, address, arbiter, nr) {
 export async function newEscrowActions(arbiterCalls) {
   const buyerInput = getById("buyer-address-input") as HTMLInputElement;
   const sellerInput = getById("seller-address-input") as HTMLInputElement;
+  const tokenInput = getById("token-selectors") as HTMLSelectElement;
   const createBttn = getById("new-escrow") as HTMLElement;
   const back = getById("backButton") as HTMLElement;
   const cAddress = escrowContractAddress();
@@ -306,6 +379,12 @@ export async function newEscrowActions(arbiterCalls) {
       renderError("Empty seller Address Input");
       return;
     }
+
+    if (tokenInput.value === "") {
+      renderError("Select a token");
+      return;
+    }
+
     renderError("");
     // eslint-disable-next-line node/handle-callback-err
     const onError = (err, receipt) => {
@@ -337,6 +416,7 @@ export async function newEscrowActions(arbiterCalls) {
           escrowContract,
           buyerInput.value,
           sellerInput.value,
+          tokenInput.value,
           address,
           onError,
           onReceipt,
@@ -393,6 +473,13 @@ export async function findOrCreateActions() {
       } else {
         fee = 0;
       }
+      let symbol = "";
+      if (detail.ERC20 == ZEROADDRESS) {
+        symbol = "BNB";
+      } else {
+        const tokenRpc = await getERC20ContractJSONRPC(detail.ERC20);
+        symbol = await getSymbol(tokenRpc);
+      }
 
       getPage(PageState.Escrow, {
         data: detail,
@@ -400,6 +487,7 @@ export async function findOrCreateActions() {
         arbiter,
         nr: escrownrInput.value,
         fee,
+        symbol,
       });
     } catch (err) {
       renderError(err);
@@ -492,6 +580,7 @@ export async function allEscrowsActions() {
 
 export async function registerAgentActions() {
   const input = getById("agentName") as HTMLInputElement;
+  const feeSelector = getById("register-fee-selectors") as HTMLSelectElement;
   const registerButton = getById("register-agent") as HTMLButtonElement;
   const backButton = getById("register-backbutton") as HTMLButtonElement;
 
@@ -511,6 +600,17 @@ export async function registerAgentActions() {
 
   input.value = agentName;
   input.disabled = false;
+
+  if (agentName === "") {
+    feeSelector.disabled = false;
+  } else {
+    const escrowAddress = await getEscrowByAddress(agentRegistry, address);
+    const escrowContract = await getEscrowContract(escrowAddress);
+    const fee = await getAgentFee(escrowContract);
+
+    feeSelector.value = fee;
+  }
+
   const onError = (error, receipt) => {
     console.log("error");
     console.log(error);
@@ -548,10 +648,18 @@ export async function registerAgentActions() {
     registerButton.onclick = async function (event) {
       event?.preventDefault();
       const localscopeinput = getById("agentName") as HTMLInputElement;
+      const selectedFee =
+        (getById("register-fee-selectors") as HTMLSelectElement).value;
 
+      if (selectedFee == "") {
+        console.log("Invalid fee selected");
+        return;
+      }
+      console.log(selectedFee);
       await registerAgent(
         agentRegistry,
         localscopeinput.value,
+        parseInt(selectedFee),
         address,
         onError,
         onReceipt,

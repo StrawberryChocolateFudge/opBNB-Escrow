@@ -12,7 +12,12 @@ import {
   newEscrowActions,
   registerAgentActions,
 } from "./actions";
-import { getCurrentChainCurrency } from "./web3";
+import {
+  getCurrentChainCurrency,
+  selectableFees,
+  SupportedTokenAddresses,
+  ZEROADDRESS,
+} from "./web3";
 import { terms } from "./terms";
 
 export function getById(id: string) {
@@ -93,7 +98,14 @@ export async function getPage(page: PageState, args: any) {
       break;
     case PageState.Escrow:
       render(
-        EscrowPage(args.data, args.address, args.arbiter, args.nr, args.fee),
+        EscrowPage(
+          args.data,
+          args.address,
+          args.arbiter,
+          args.nr,
+          args.fee,
+          args.symbol,
+        ),
         main,
       );
       escrowActions(args.data, args.address, args.arbiter, args.nr);
@@ -103,7 +115,7 @@ export async function getPage(page: PageState, args: any) {
       historyPageActions();
       break;
     case PageState.connectWallet:
-      render(ConnectWallet(args.agentName), main);
+      render(ConnectWallet(args.agentName, args.fee), main);
       connectWalletAction(args.nextPage);
       break;
     case PageState.termsPage:
@@ -165,6 +177,7 @@ function getStateText(state) {
   }
 }
 
+//TODO: if it's an ERC20, there needs to be spend approval!
 const getAction = (address, buyer, seller, arbiter, state, withdrawn) => {
   switch (address) {
     case buyer:
@@ -260,10 +273,16 @@ const copyButton = () =>
   html`
 <div id="copyButton" class="cursor-pointer hover-light roundedSquare"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z"/></svg></div>`;
 
+const TokenAddressDisplay = (address) =>
+  html`
+<pre>Token Address: ${address}</pre>`;
+
 // Action button toggles based on if I'm the arbiter, the buyer or the seller
-export const EscrowPage = (escrow, address, arbiter, escrowNr, fee) => {
+export const EscrowPage = (escrow, address, arbiter, escrowNr, fee, symbol) => {
   const urlSearchParams = new URLSearchParams(window.location.search);
   const escrowIndex = urlSearchParams.get("i");
+
+  const displayAddress = escrow.ERC20 !== ZEROADDRESS;
 
   return html`
   <article id="escrow-body" data-nr="${escrowNr}" class="maxwidth-800px center">
@@ -280,7 +299,7 @@ export const EscrowPage = (escrow, address, arbiter, escrowNr, fee) => {
   }${
     DisplayInTable(
       "Payment",
-      Web3.utils.fromWei(escrow.pay) + " " + getCurrentChainCurrency(),
+      Web3.utils.fromWei(escrow.pay) + " " + symbol,
     )
   }${DisplayInTable("State", getStateText(escrow.state))}${
     DisplayInTable(
@@ -291,10 +310,16 @@ export const EscrowPage = (escrow, address, arbiter, escrowNr, fee) => {
       ${
     DisplayInTable(
       "Fee",
-      Web3.utils.fromWei(fee) + " " + getCurrentChainCurrency(),
+      Web3.utils.fromWei(fee) + " " + symbol,
     )
   }
     </div>
+    ${
+    displayAddress
+      ? html`${DisplayInTable("Token Address", escrow.ERC20)}`
+      : null
+  }
+    
     <div id="message-slot" class="text-align-center"></div>
     ${
     getAction(
@@ -364,6 +389,7 @@ export const NewEscrow = (arbiterCalls, deprecated) =>
     id="seller-address-input"
     placeholder="Seller address"
   />
+  ${TokenSelector()}
 
   <div id="message-slot" class="text-align-center"></div>
   <div id="new-escrow-button-container">
@@ -385,6 +411,18 @@ export const NewEscrow = (arbiterCalls, deprecated) =>
   }
 </article>`;
 
+//TODO: Display a logo and an address
+const TokenSelector = () =>
+  html`
+<select name="tokenSElect" aria-label="Fee Select" required id="token-selectors">
+  <option selected disabled value="">Select the token</option>
+  ${
+    SupportedTokenAddresses.map((val) =>
+      html`<option value=${val.address} >${val.name}</option>`
+    )
+  }
+</select>`;
+
 export const findOrCreate = (title: string) =>
   html`
   <article class="maxwidth-500px center">
@@ -402,7 +440,6 @@ export const findOrCreate = (title: string) =>
     <hr />
     <img src="./imgs/search.svg"/>
     <div style="margin-bottom: 10px;"></div>
-    <!-- <h4 class="text-align-center">Don't have an Escrow?</h4> -->
     <button id="new-escrow" class="width-200 center">Create new</button>
     <div class="text-align-center">
       <a
@@ -422,10 +459,11 @@ export const History = () =>
   <h3 class="text-align-center">History</h3>
 </article>`;
 
-export const ConnectWallet = (title: string) =>
+export const ConnectWallet = (title: string, fee: string) =>
   html`<article class="maxwidth-500px center">
     <h6 class="text-align-center">${title}</h6>
     <h4 class="text-align-center">${logo()} Escrow Service</h4>
+    <h6 class="text-align-center">${fee}% fee</h6>
     <img src="./imgs/connection.svg"/>
     <div id="message-slot" class="text-align-center"></div>
     <button id="connect-wallet" class="maxwidth-200 center">
@@ -463,12 +501,15 @@ export const NotFoundPage = () =>
 export const RegisterAgent = () =>
   html`<article class="maxwidth-500px center">
   <h1 class="text-align-center">Agent Registry</h1>
-  <p>Sign up as an escrow agent and resolve disputes for a fee. Use your telegram handle when registering so you can be contacted.</p>
+  <p>Sign up as an escrow agent and resolve disputes for a fee. Use your telegram handle when registering so you can be contacted. </p>
+  <p>The fee you select when registering can't be changed. There is a 0.5% service fee added to your selected amount.</p>
+  ${FeeSelector()}
   <input 
-  class="width-200 center maxwidth-200"
+  class="center"
   type="text"
   id="agentName"
   title="Telegram Handle"
+  placeholder="Escrow Agent Name"
   minlength="5"
   disabled
   />
@@ -491,3 +532,13 @@ export const RegisterAgent = () =>
     </div>
 
 </article>`;
+
+const FeeSelector = () =>
+  html`<select disabled name="feeselect" aria-label="Fee Select" required id="register-fee-selectors">
+  <option selected disabled value="">Select your fee</option>
+  ${
+    selectableFees().map((val) =>
+      html`<option value=${val.fee} >${val.text}</option>`
+    )
+  }
+</select>`;

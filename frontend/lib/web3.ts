@@ -3,17 +3,30 @@ import Web3 from "web3";
 import escrow from "../../artifacts/contracts/Escrow.sol/Escrow.json";
 import agentRegistry from "../../artifacts/contracts/AgentRegistry.sol/AgentRegistry.json";
 import simpleTerms from "../../artifacts/contracts/SimpleTerms.sol/SimpleTerms.json";
+import erc20 from "../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json";
 
 import { renderError } from "./views";
 
 // WE ARE ON onBNB Testnet
 export const AgentRegistryAddress =
-  "0x35CEa074145Ae2E79eDF7260296103f9eD5D9110";
-export const SimpleTermsAddress = "0x766c30d0725bC93cC0d7F9B7c3C6E03c039e0981";
+  "0xE08D5a45611fCbe8f91b7E4b47156213f592E8C1";
+export const SimpleTermsAddress = "0xCEC9445f1beA5e10D4cA38d6f66A4BdD57a9420E";
 
 const RPC = "https://opbnb-testnet-rpc.bnbchain.org";
 
 export const OPBNBTESTNETID = "0x15EB"; //5611
+
+const DAOFEE = 50;
+export const ZEROADDRESS = "0x0000000000000000000000000000000000000000";
+//TESTNET!
+export const SupportedTokenAddresses = [
+  { name: "BNB", address: ZEROADDRESS, logo: "" },
+  {
+    name: "USDT",
+    address: "0xCF712f20c85421d00EAa1B6F6545AaEEb4492B75",
+    logo: "",
+  },
+];
 
 declare global {
   // eslint-disable-next-line no-unused-vars
@@ -46,6 +59,45 @@ export function getEscrowContractJSONRPC(address) {
   return new web3.eth.Contract(abi, address);
 }
 
+export function getERC20ContractJSONRPC(tokenaddress) {
+  const web3 = new Web3(RPC);
+  const abi = JSON.parse(JSON.stringify(erc20)).abi;
+  return new web3.eth.Contract(abi, tokenaddress);
+}
+
+export function getERC20Contract(tokenaddress) {
+  const web3 = getWeb3() as Web3;
+  const abi = JSON.parse(JSON.stringify(erc20)).abi;
+  return new web3.eth.Contract(abi, tokenaddress);
+}
+
+export async function getSymbol(erc20contract) {
+  return await erc20contract.methods.symbol().call();
+}
+
+export async function getAllowance(erc20contract, owner, spender) {
+  return await erc20contract.methods.allowance(owner, spender).call();
+}
+
+export function convertWeiToString(amount) {
+  return Web3.utils.fromWei(amount);
+}
+
+export async function approve(
+  erc20Contract,
+  from,
+  spender,
+  amount,
+  onReceipt,
+  onError,
+) {
+  return await erc20Contract.methods
+    .approve(spender, Web3.utils.toWei(amount))
+    .send({ from })
+    .on("error", onError)
+    .on("receipt", onReceipt);
+}
+
 export const getCurrentChainCurrency = () => "BNB";
 
 export async function getMyDetails(escrow, myaddress) {
@@ -56,6 +108,10 @@ export async function getMyDetails(escrow, myaddress) {
 
 export async function getArbiter(escrow) {
   return await escrow.methods.getArbiter().call();
+}
+
+export async function getAgentFee(escrow) {
+  return await escrow.methods.FEE().call({});
 }
 
 export async function getFee(escrow, amount) {
@@ -70,6 +126,21 @@ export async function depositPay(escrow, to, amount, from, onError, onReceipt) {
   await escrow.methods
     .depositPay(to)
     .send({ from, value: Web3.utils.toWei(amount) })
+    .on("error", onError)
+    .on("receipt", onReceipt);
+}
+
+export async function depositERC20Pay(
+  escrow,
+  to,
+  amount,
+  from,
+  onError,
+  onReceipt,
+) {
+  await escrow.methods
+    .depositErc20Pay(to, Web3.utils.toWei(amount))
+    .send({ from })
     .on("error", onError)
     .on("receipt", onReceipt);
 }
@@ -118,12 +189,13 @@ export async function createEscrow(
   escrow,
   buyer,
   seller,
+  token,
   from,
   onError,
   onReceipt,
 ) {
   await escrow.methods
-    .createEscrow(buyer, seller)
+    .createEscrow(buyer, seller, token)
     .send({ from })
     .on("error", onError)
     .on("receipt", onReceipt);
@@ -168,15 +240,37 @@ export async function getContractAndNameByIndex(agentRegistry, index) {
   return await agentRegistry.methods.getContractAndNameByIndex(index).call();
 }
 
+//This is for the front end to call, the fees that can be selected
+export function selectableFees() {
+  const fee = (text: string, fee: number) => {
+    return { text, fee };
+  };
+
+  let res: { text: string; fee: number }[] = [];
+
+  for (let i = 1; i <= 20; i++) {
+    res.push(fee(`${i * 0.5}%`, 50 * i));
+  }
+
+  return res;
+}
+
+export function calculateFeePercentage(agentFee: string) {
+  const fee = parseInt(agentFee) + DAOFEE;
+  console.log("FEE", fee);
+  return ((100 * fee) / 10000).toFixed(1);
+}
+
 export async function registerAgent(
   agentRegistry,
   agentName,
+  fee,
   from,
   onError,
   onReceipt,
 ) {
   await agentRegistry.methods
-    .registerAgent(agentName)
+    .registerAgent(agentName, fee)
     .send({ from })
     .on("error", onError)
     .on("receipt", onReceipt);

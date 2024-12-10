@@ -2,6 +2,8 @@
 // eslint-disable-next-line node/no-missing-import
 import { getPage, PageState } from "./lib/views";
 import {
+  calculateFeePercentage,
+  getAgentFee,
   getAgentNameByAddress,
   getAgentRegistryContractJSONRpcProvider,
   getArbiter,
@@ -34,9 +36,12 @@ import {
     const escrow = getEscrowContractJSONRPC(cparam);
     const agentRegistry = getAgentRegistryContractJSONRpcProvider();
     let agentName = "";
+    let fee = "";
     try {
       const arbiter = await getArbiter(escrow);
       agentName = await getAgentNameByAddress(agentRegistry, arbiter);
+      const agentFee = await getAgentFee(escrow);
+      fee = calculateFeePercentage(agentFee);
     } catch (err) {
       await getPage(PageState.notFound, {});
       return;
@@ -45,6 +50,7 @@ import {
     if (escrowIndex === null) {
       await getPage(PageState.connectWallet, {
         agentName,
+        fee,
         nextPage: PageState.FindOrCreate,
       });
       return;
@@ -57,6 +63,7 @@ import {
 
       await getPage(PageState.connectWallet, {
         agentName,
+        fee,
         nextPage: PageState.Escrow,
       });
     }
