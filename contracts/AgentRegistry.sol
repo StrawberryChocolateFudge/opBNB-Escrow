@@ -22,14 +22,15 @@ contract AgentRegistry {
     }
 
     //This should deploy a new Escrow contract
-    function registerAgent(string memory _agentName) external {
+    //Specify the fee the agent charges
+    function registerAgent(string memory _agentName, uint256 fee) external {
         require(bytes(_agentName).length > 5, "Name too short");
         require(compareAgentNameTo(""), "Only one escrow per address");
         agentName[msg.sender] = _agentName;
         agentAddress[index] = msg.sender;
         index++;
 
-        Escrow escrow = new Escrow(msg.sender, simpleTerms);
+        Escrow escrow = new Escrow(msg.sender, simpleTerms, fee);
 
         agentEscrowContracts[msg.sender] = address(escrow);
         allEscrowContracts.push(address(escrow));
