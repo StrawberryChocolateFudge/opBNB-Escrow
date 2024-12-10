@@ -2,7 +2,6 @@
 /* eslint-disable no-case-declarations */
 /* eslint-disable no-undef */
 /* eslint-disable node/no-missing-import */
-import { fetchBNBUSDPrice } from "./fetch";
 import { hashEscrowAgreement } from "./terms";
 import {
   createSuccess,
@@ -147,14 +146,7 @@ export async function escrowActions(detail, address, arbiter, nr) {
           renderError("");
           if (parseFloat(amountEl.value) > 0) {
             if (accepted) {
-              const price = await fetchBNBUSDPrice();
-              const usdValue = parseFloat(amountEl.value) * price;
-
-              if (usdValue > max800) {
-                renderError("Maximum 800USD value is allowed!");
-                return;
-              }
-
+              
               await depositPay(
                 escrowContract,
                 nr,
